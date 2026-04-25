@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ECS Fargate cluster and service for family-recipes
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: Full ECR image URI including tag
+  AppSecretArn:
+    Type: String
+    Description: ARN of the app secrets in Secrets Manager
+  DBSecretArn:
+    Type: String
+    Description: ARN of the RDS credentials secret in Secrets Manager
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/family-recipes
+      RetentionInDays: 30
+
+  Cluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: family-recipes
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: family-recipes
+      Cpu: "512"
+      Memory: "1024"
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !ImportValue family-recipes-execution-role-arn
+      TaskRoleArn: !ImportValue family-recipes-task-role-arn
+      ContainerDefinitions:
+        - Name: app
+          Image: !Ref ImageUri
+          PortMappings:
+            - ContainerPort: 3000
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/family-recipes
+              awslogs-region: eu-west-2
+              awslogs-stream-prefix: app
+          Secrets:
+            - Name: AUTH_SECRET
+              ValueFrom: !Sub "${AppSecretArn}:AUTH_SECRET::"
+            - Name: GOOGLE_CLIENT_ID
+              ValueFrom: !Sub "${AppSecretArn}:GOOGLE_CLIENT_ID::"
+            - Name: GOOGLE_CLIENT_SECRET
+              ValueFrom: !Sub "${AppSecretArn}:GOOGLE_CLIENT_SECRET::"
+            - Name: ADMIN_EMAIL
+              ValueFrom: !Sub "${AppSecretArn}:ADMIN_EMAIL::"
+            - Name: S3_BUCKET_NAME
+              ValueFrom: !Sub "${AppSecretArn}:S3_BUCKET_NAME::"
+            - Name: NEXT_PUBLIC_BASE_URL
+              ValueFrom: !Sub "${AppSecretArn}:NEXT_PUBLIC_BASE_URL::"
+            - Name: DB_USERNAME
+              ValueFrom: !Sub "${DBSecretArn}:username::"
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub "${DBSecretArn}:password::"
+            - Name: DB_HOST
+              ValueFrom: !Sub "${DBSecretArn}:host::"
+            - Name: DB_NAME
+              ValueFrom: !Sub "${DBSecretArn}:dbname::"
+          Environment:
+            - Name: AWS_REGION
+              Value: eu-west-2
+            - Name: NODE_ENV
+              Value: production
+            - Name: AUTH_TRUST_HOST
+              Value: "true"
+
+  Service:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: family-recipes
+      Cluster: !Ref Cluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          Subnets:
+            - !ImportValue family-recipes-private-subnet-1
+            - !ImportValue family-recipes-private-subnet-2
+          SecurityGroups:
+            - !ImportValue family-recipes-ecs-sg
+          AssignPublicIp: DISABLED
+      LoadBalancers:
+        - ContainerName: app
+          ContainerPort: 3000
+          TargetGroupArn: !ImportValue family-recipes-target-group-arn
+      HealthCheckGracePeriodSeconds: 60
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+
+Outputs:
+  ClusterName:
+    Value: !Ref Cluster
+    Export:
+      Name: family-recipes-cluster-name
+  ServiceName:
+    Value: !GetAtt Service.Name
+    Export:
+      Name: family-recipes-service-name

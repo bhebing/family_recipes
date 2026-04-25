@@ -1,0 +1,63 @@
+{
+  "Navbar": {
+    "signIn": "Inloggen met Google",
+    "signOut": "Uitloggen",
+    "addRecipe": "Recept toevoegen"
+  },
+  "HomePage": {
+    "title": "Alle recepten",
+    "recipeCount": "{count, plural, =0 {0 recepten} =1 {1 recept} other {# recepten}}",
+    "empty": "Nog geen recepten.",
+    "addFirst": "Start met een eerste recept",
+    "searchPlaceholder": "Zoek recepten…",
+    "noResults": "Geen recepten gevonden voor \"{query}\""
+  },
+  "RecipePage": {
+    "edit": "Bewerken",
+    "by": "Door {name}",
+    "servings": "{count} porties",
+    "prepTime": "Voorbereiding: {minutes} min",
+    "cookTime": "Kooktijd: {minutes} min",
+    "totalTime": "Totaal: {minutes} min",
+    "ingredients": "Ingrediënten",
+    "instructions": "Bereidingswijze",
+    "comments": "Reacties ({count})",
+    "noComments": "Nog geen reacties. Voeg de eerste toe!",
+    "commentPlaceholder": "Bijv. heb dit geprobeerd en iets meer zout toegevoegd…",
+    "commentSubmit": "Reactie plaatsen",
+    "commentSubmitting": "Plaatsen…",
+    "commentDelete": "Verwijderen",
+    "commentSignIn": "Log in om een reactie achter te laten."
+  },
+  "RecipeForm": {
+    "createTitle": "Recept toevoegen",
+    "editTitle": "Recept bewerken",
+    "titleLabel": "Naam",
+    "titlePlaceholder": "bijv. Oma's appeltaart",
+    "descriptionLabel": "Omschrijving",
+    "descriptionPlaceholder": "Korte beschrijving van het recept…",
+    "categoryLabel": "Categorie",
+    "categoryPlaceholder": "bijv. Nagerecht, Pasta, Soep…",
+    "servingsLabel": "Porties",
+    "prepLabel": "Voorbereiding (min)",
+    "cookLabel": "Kooktijd (min)",
+    "ingredientsTitle": "Ingrediënten",
+    "amountPlaceholder": "Hoeveelheid",
+    "unitPlaceholder": "Eenheid",
+    "namePlaceholder": "Naam ingrediënt",
+    "addIngredient": "+ Ingrediënt toevoegen",
+    "stepsTitle": "Bereidingswijze",
+    "stepPlaceholder": "Stap {number}…",
+    "addStep": "+ Stap toevoegen",
+    "saving": "Opslaan…",
+    "saveChanges": "Wijzigingen opslaan",
+    "createRecipe": "Recept aanmaken",
+    "required": "verplicht",
+    "errorGeneric": "Er is een fout opgetreden. Probeer het opnieuw."
+  },
+  "SignIn": {
+    "title": "Welkom terug",
+    "subtitle": "Log in om recepten toe te voegen en beoordelingen achter te laten.",
+    "button": "Inloggen met Google"
+  }
+}

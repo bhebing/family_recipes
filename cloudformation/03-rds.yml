@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: RDS PostgreSQL for family-recipes
+
+Resources:
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Private subnets for family-recipes RDS
+      SubnetIds:
+        - !ImportValue family-recipes-private-subnet-1
+        - !ImportValue family-recipes-private-subnet-2
+
+  DBSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: family-recipes/db-credentials
+      Description: RDS master credentials
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "family_recipes"}'
+        GenerateStringKey: password
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
+
+  DBInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Snapshot
+    Properties:
+      DBInstanceIdentifier: family-recipes-db
+      DBName: family_recipes
+      Engine: postgres
+      EngineVersion: "16"
+      DBInstanceClass: db.t3.micro
+      AllocatedStorage: 20
+      StorageType: gp2
+      MasterUsername: !Sub "{{resolve:secretsmanager:family-recipes/db-credentials:SecretString:username}}"
+      MasterUserPassword: !Sub "{{resolve:secretsmanager:family-recipes/db-credentials:SecretString:password}}"
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !ImportValue family-recipes-rds-sg
+      MultiAZ: false
+      PubliclyAccessible: false
+      BackupRetentionPeriod: 7
+      DeletionProtection: true
+
+  # Attach the actual endpoint to the secret so the app can read it
+  DBSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DBSecret
+      TargetId: !Ref DBInstance
+      TargetType: AWS::RDS::DBInstance
+
+Outputs:
+  DBEndpoint:
+    Value: !GetAtt DBInstance.Endpoint.Address
+    Export:
+      Name: family-recipes-db-endpoint
+  DBSecretArn:
+    Value: !Ref DBSecret
+    Export:
+      Name: family-recipes-db-secret-arn

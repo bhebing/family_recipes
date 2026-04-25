@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ACM certificate, ALB, HTTPS listener, and Route53 for family-recipes
+
+Resources:
+  # ── TLS certificate (auto-validated via Route53) ──────────────────────────────
+  Certificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: klaproosnet.nl
+      SubjectAlternativeNames:
+        - "*.klaproosnet.nl"
+      ValidationMethod: DNS
+      DomainValidationOptions:
+        - DomainName: klaproosnet.nl
+          HostedZoneId: Z1T2E0SMMEAWJX
+
+  # ── Load balancer ─────────────────────────────────────────────────────────────
+  ALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: family-recipes-alb
+      Scheme: internet-facing
+      Type: application
+      Subnets:
+        - !ImportValue family-recipes-public-subnet-1
+        - !ImportValue family-recipes-public-subnet-2
+      SecurityGroups:
+        - !ImportValue family-recipes-alb-sg
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: family-recipes-tg
+      Port: 3000
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !ImportValue family-recipes-vpc-id
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: 200-399
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: "30"
+
+  # HTTP → HTTPS redirect
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: redirect
+          RedirectConfig:
+            Protocol: HTTPS
+            Port: "443"
+            StatusCode: HTTP_301
+
+  # HTTPS listener forwarding to ECS
+  HTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ALB
+      Port: 443
+      Protocol: HTTPS
+      Certificates:
+        - CertificateArn: !Ref Certificate
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  # ── Route53 ───────────────────────────────────────────────────────────────────
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: Z1T2E0SMMEAWJX
+      Name: klaproosnet.nl
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ALB.DNSName
+        EvaluateTargetHealth: true
+        HostedZoneId: !GetAtt ALB.CanonicalHostedZoneID
+
+  WWWDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: Z1T2E0SMMEAWJX
+      Name: www.klaproosnet.nl
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt ALB.DNSName
+        EvaluateTargetHealth: true
+        HostedZoneId: !GetAtt ALB.CanonicalHostedZoneID
+
+Outputs:
+  ALBDnsName:
+    Value: !GetAtt ALB.DNSName
+    Export:
+      Name: family-recipes-alb-dns
+  TargetGroupArn:
+    Value: !Ref TargetGroup
+    Export:
+      Name: family-recipes-target-group-arn
+  CertificateArn:
+    Value: !Ref Certificate
+    Export:
+      Name: family-recipes-certificate-arn

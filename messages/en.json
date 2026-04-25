@@ -1,0 +1,63 @@
+{
+  "Navbar": {
+    "signIn": "Sign in with Google",
+    "signOut": "Sign out",
+    "addRecipe": "Add Recipe"
+  },
+  "HomePage": {
+    "title": "All Recipes",
+    "recipeCount": "{count, plural, =0 {0 recipes} =1 {1 recipe} other {# recipes}}",
+    "empty": "No recipes yet.",
+    "addFirst": "Add the first one",
+    "searchPlaceholder": "Search recipes…",
+    "noResults": "No recipes found for \"{query}\""
+  },
+  "RecipePage": {
+    "edit": "Edit",
+    "by": "By {name}",
+    "servings": "{count} servings",
+    "prepTime": "Prep: {minutes} min",
+    "cookTime": "Cook: {minutes} min",
+    "totalTime": "Total: {minutes} min",
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "comments": "Comments ({count})",
+    "noComments": "No comments yet. Be the first!",
+    "commentPlaceholder": "E.g. tried this and added a bit more salt…",
+    "commentSubmit": "Post comment",
+    "commentSubmitting": "Posting…",
+    "commentDelete": "Delete",
+    "commentSignIn": "Sign in to leave a comment."
+  },
+  "RecipeForm": {
+    "createTitle": "Add a recipe",
+    "editTitle": "Edit recipe",
+    "titleLabel": "Title",
+    "titlePlaceholder": "e.g. Grandma's Apple Pie",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "A short description of the recipe…",
+    "categoryLabel": "Category",
+    "categoryPlaceholder": "e.g. Dessert, Pasta, Soup…",
+    "servingsLabel": "Servings",
+    "prepLabel": "Prep (min)",
+    "cookLabel": "Cook (min)",
+    "ingredientsTitle": "Ingredients",
+    "amountPlaceholder": "Amount",
+    "unitPlaceholder": "Unit",
+    "namePlaceholder": "Ingredient name",
+    "addIngredient": "+ Add ingredient",
+    "stepsTitle": "Instructions",
+    "stepPlaceholder": "Step {number}…",
+    "addStep": "+ Add step",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "createRecipe": "Create recipe",
+    "required": "required",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
+  "SignIn": {
+    "title": "Welcome back",
+    "subtitle": "Sign in to add recipes and leave reviews.",
+    "button": "Sign in with Google"
+  }
+}
