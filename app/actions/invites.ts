@@ -29,6 +29,9 @@ export async function revokeInvite(inviteId: string) {
 
 export async function revokeUser(userId: string) {
   await requireAdmin();
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } });
+  if (!user) throw new Error("User not found");
+  if (user.isAdmin) throw new Error("Cannot revoke admin users");
   await prisma.user.update({ where: { id: userId }, data: { approved: false } });
   revalidatePath("/admin/invites");
 }

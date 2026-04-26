@@ -36,8 +36,9 @@ export async function deleteUploadedImage(publicUrl: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  const key = publicUrl.replace(`${S3_BASE_URL}/`, "");
-  if (!key.startsWith("recipes/")) return; // safety guard
+  if (!publicUrl.startsWith(`${S3_BASE_URL}/`)) throw new Error("Invalid image URL");
+  const key = publicUrl.slice(`${S3_BASE_URL}/`.length);
+  if (!key.startsWith("recipes/")) return;
 
   await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
 }

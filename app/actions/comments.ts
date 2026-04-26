@@ -24,6 +24,7 @@ export async function deleteComment(commentId: string, recipeId: string) {
 
   const comment = await prisma.review.findUnique({ where: { id: commentId } });
   if (!comment || comment.authorId !== session.user.id) throw new Error("Forbidden");
+  if (comment.recipeId !== recipeId) throw new Error("Comment does not belong to this recipe");
 
   await prisma.review.delete({ where: { id: commentId } });
 
