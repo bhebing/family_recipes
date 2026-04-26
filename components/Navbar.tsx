@@ -17,7 +17,7 @@ export default async function Navbar() {
       <div className="mx-auto max-w-4xl px-6 h-16 flex items-center justify-between">
         <Link
           href="/"
-          className="text-lg font-semibold tracking-tight text-stone-800 hover:text-amber-700 transition-colors"
+          className="font-serif text-xl font-bold tracking-tight text-stone-800 hover:text-amber-700 transition-colors"
         >
           Family Recipes
         </Link>

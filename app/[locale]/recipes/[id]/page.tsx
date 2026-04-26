@@ -50,7 +50,7 @@ export default async function RecipePage({ params }: Props) {
       {/* Header */}
       <div className="mb-10">
         <div className="flex items-start justify-between gap-6 mb-4">
-          <h1 className="text-4xl font-bold tracking-tight text-stone-900 leading-tight">
+          <h1 className="font-serif text-4xl font-bold tracking-tight text-stone-900 leading-tight">
             {recipe.title}
           </h1>
           {isAuthor && (

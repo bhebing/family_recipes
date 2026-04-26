@@ -33,10 +33,22 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <div>
+      {/* Hero — drop /public/hero.jpg to replace the gradient placeholder */}
+      <div className="-mx-6 -mt-12 mb-10 relative h-64 sm:h-80 overflow-hidden bg-stone-200">
+        {/*
+          Once you have a photo, replace the gradient div below with:
+          <Image src="/hero.jpg" alt="Family kitchen" fill className="object-cover object-center" priority />
+          <div className="absolute inset-0 bg-black/25" />
+        */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-100 via-stone-100 to-stone-200" />
+        <div className="relative h-full flex flex-col items-center justify-center px-6 text-center">
+          <h1 className="font-serif text-5xl sm:text-6xl font-bold tracking-tight text-stone-800">
+            {t("title")}
+          </h1>
+        </div>
+      </div>
+
       <div className="mb-8">
-        <h1 className="text-4xl font-bold tracking-tight text-stone-900 mb-6">
-          {t("title")}
-        </h1>
         <Suspense>
           <SearchInput />
         </Suspense>
@@ -61,41 +73,43 @@ export default async function HomePage({ searchParams }: Props) {
       )}
 
       {recipes.length > 0 && (
-        <div className="mt-6 grid gap-px bg-stone-200 border border-stone-200 rounded-2xl overflow-hidden sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {recipes.map((recipe) => (
             <Link
               key={recipe.id}
               href={`/recipes/${recipe.id}`}
-              className="group bg-[#fafaf8] hover:bg-white transition-colors overflow-hidden"
+              className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow border border-stone-100"
             >
-              {recipe.imageUrl && (
+              {recipe.imageUrl ? (
                 <div className="relative w-full aspect-video bg-stone-100">
                   <Image src={recipe.imageUrl} alt={recipe.title} fill className="object-cover" />
                 </div>
+              ) : (
+                <div className="w-full aspect-video bg-gradient-to-br from-amber-50 to-stone-100" />
               )}
-              <div className="p-6">
-              {recipe.category && (
-                <p className="text-xs font-medium uppercase tracking-widest text-amber-700 mb-3">
-                  {recipe.category}
-                </p>
-              )}
-              <h2 className="font-semibold text-stone-900 group-hover:text-amber-700 transition-colors leading-snug">
-                {recipe.title}
-              </h2>
-              {recipe.description && (
-                <p className="mt-2 text-sm text-stone-500 line-clamp-2 leading-relaxed">
-                  {recipe.description}
-                </p>
-              )}
-              <div className="mt-5 flex items-center gap-3 text-xs text-stone-400">
-                <span>{recipe.author.name}</span>
-                {recipe.prepTime != null && recipe.cookTime != null && (
-                  <>
-                    <span>·</span>
-                    <span>{recipe.prepTime + recipe.cookTime} min</span>
-                  </>
+              <div className="p-5">
+                {recipe.category && (
+                  <p className="text-xs font-medium uppercase tracking-widest text-amber-700 mb-2">
+                    {recipe.category}
+                  </p>
                 )}
-              </div>
+                <h2 className="font-serif font-bold text-stone-900 group-hover:text-amber-700 transition-colors leading-snug">
+                  {recipe.title}
+                </h2>
+                {recipe.description && (
+                  <p className="mt-2 text-sm text-stone-500 line-clamp-2 leading-relaxed">
+                    {recipe.description}
+                  </p>
+                )}
+                <div className="mt-4 flex items-center gap-3 text-xs text-stone-400">
+                  <span>{recipe.author.name}</span>
+                  {recipe.prepTime != null && recipe.cookTime != null && (
+                    <>
+                      <span>·</span>
+                      <span>{recipe.prepTime + recipe.cookTime} min</span>
+                    </>
+                  )}
+                </div>
               </div>
             </Link>
           ))}
