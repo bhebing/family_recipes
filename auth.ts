@@ -27,13 +27,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return true;
       }
 
-      // Everyone else must already be approved
       const dbUser = await prisma.user.findUnique({
         where: { email: user.email },
         select: { approved: true },
       });
 
-      return dbUser?.approved === true;
+      // New user: allow through so they can land on the invite page and accept it
+      if (!dbUser) return true;
+
+      return dbUser.approved === true;
     },
     session({ session, user }) {
       session.user.id = user.id;

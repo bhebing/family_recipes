@@ -13,7 +13,7 @@ export default async function EditRecipePage({ params }: Props) {
   const session = await auth();
   if (!session?.user) redirect("/auth/signin");
 
-  const [recipe, t] = await Promise.all([
+  const [recipe, t, currentUser] = await Promise.all([
     prisma.recipe.findUnique({
       where: { id },
       include: {
@@ -22,7 +22,10 @@ export default async function EditRecipePage({ params }: Props) {
       },
     }),
     getTranslations("RecipeForm"),
+    prisma.user.findUnique({ where: { id: session.user.id }, select: { approved: true } }),
   ]);
+
+  if (!currentUser?.approved) redirect("/auth/pending");
 
   if (!recipe) notFound();
   if (recipe.authorId !== session.user.id) redirect(`/recipes/${id}`);
