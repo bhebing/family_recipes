@@ -16,8 +16,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user }) {
       if (!user.email) return false;
 
-      // Admin is always allowed through — approved+isAdmin set via createUser event
-      if (user.email === process.env.ADMIN_EMAIL) return true;
+      if (user.email === process.env.ADMIN_EMAIL) {
+        // createUser only fires on first creation; update existing accounts too
+        if (user.id) {
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { approved: true, isAdmin: true },
+          });
+        }
+        return true;
+      }
 
       // Everyone else must already be approved
       const dbUser = await prisma.user.findUnique({

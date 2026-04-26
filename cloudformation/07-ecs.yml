@@ -59,6 +59,8 @@ Resources:
               ValueFrom: !Sub "${AppSecretArn}:S3_BUCKET_NAME::"
             - Name: NEXT_PUBLIC_BASE_URL
               ValueFrom: !Sub "${AppSecretArn}:NEXT_PUBLIC_BASE_URL::"
+            - Name: AUTH_URL
+              ValueFrom: !Sub "${AppSecretArn}:AUTH_URL::"
             - Name: DB_USERNAME
               ValueFrom: !Sub "${DBSecretArn}:username::"
             - Name: DB_PASSWORD
