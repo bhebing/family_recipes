@@ -1,0 +1,63 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: CloudFront distribution in front of S3 for family-recipes recipe images
+
+Resources:
+  OriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: family-recipes-s3-oac
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+
+  Distribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: family-recipes recipe images
+        PriceClass: PriceClass_100
+        HttpVersion: http2and3
+        Origins:
+          - Id: S3Origin
+            DomainName: family-recipes-715991861892-eu-west-2-an.s3.eu-west-2.amazonaws.com
+            S3OriginConfig:
+              OriginAccessIdentity: ""
+            OriginAccessControlId: !GetAtt OriginAccessControl.Id
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6  # AWS managed: CachingOptimized (1 day default TTL)
+          AllowedMethods: [GET, HEAD]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+
+  # Locks the bucket: only CloudFront OAC can read recipe images.
+  # After deploying this stack, enable "Block all public access" on the bucket.
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: family-recipes-715991861892-eu-west-2-an
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowCloudFrontOAC
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: arn:aws:s3:::family-recipes-715991861892-eu-west-2-an/recipes/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub "arn:aws:cloudfront::${AWS::AccountId}:distribution/${Distribution}"
+
+Outputs:
+  DistributionDomain:
+    Value: !GetAtt Distribution.DomainName
+    Export:
+      Name: family-recipes-cloudfront-domain
+  DistributionUrl:
+    Value: !Sub "https://${Distribution.DomainName}"
+    Export:
+      Name: family-recipes-cloudfront-url

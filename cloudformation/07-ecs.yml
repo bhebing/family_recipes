@@ -76,6 +76,8 @@ Resources:
               Value: production
             - Name: AUTH_TRUST_HOST
               Value: "true"
+            - Name: CLOUDFRONT_URL
+              Value: !ImportValue family-recipes-cloudfront-url
 
   Service:
     Type: AWS::ECS::Service

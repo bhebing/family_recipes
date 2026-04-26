@@ -6,3 +6,4 @@ export const s3 = new S3Client({
 
 export const S3_BUCKET = process.env.S3_BUCKET_NAME!;
 export const S3_BASE_URL = `https://${process.env.S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com`;
+export const IMAGES_BASE_URL = process.env.CLOUDFRONT_URL ?? S3_BASE_URL;

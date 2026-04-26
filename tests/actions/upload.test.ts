@@ -6,6 +6,7 @@ vi.mock("@/lib/s3", () => ({
   s3: { send: vi.fn() },
   S3_BUCKET: "my-bucket",
   S3_BASE_URL: "https://my-bucket.s3.eu-west-2.amazonaws.com",
+  IMAGES_BASE_URL: "https://my-bucket.s3.eu-west-2.amazonaws.com",
 }));
 
 vi.mock("@aws-sdk/client-s3", () => ({

@@ -4,7 +4,7 @@ import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
 import { auth } from "@/auth";
-import { s3, S3_BUCKET, S3_BASE_URL } from "@/lib/s3";
+import { s3, S3_BUCKET, S3_BASE_URL, IMAGES_BASE_URL } from "@/lib/s3";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic"];
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
@@ -29,15 +29,22 @@ export async function getPresignedUploadUrl(contentType: string, size: number) {
     { expiresIn: 300 }
   );
 
-  return { url, publicUrl: `${S3_BASE_URL}/${key}` };
+  return { url, publicUrl: `${IMAGES_BASE_URL}/${key}` };
 }
 
 export async function deleteUploadedImage(publicUrl: string) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
-  if (!publicUrl.startsWith(`${S3_BASE_URL}/`)) throw new Error("Invalid image URL");
-  const key = publicUrl.slice(`${S3_BASE_URL}/`.length);
+  let key: string;
+  if (publicUrl.startsWith(`${IMAGES_BASE_URL}/`)) {
+    key = publicUrl.slice(`${IMAGES_BASE_URL}/`.length);
+  } else if (IMAGES_BASE_URL !== S3_BASE_URL && publicUrl.startsWith(`${S3_BASE_URL}/`)) {
+    // Accept legacy S3 URLs stored before CloudFront was added
+    key = publicUrl.slice(`${S3_BASE_URL}/`.length);
+  } else {
+    throw new Error("Invalid image URL");
+  }
   if (!key.startsWith("recipes/")) return;
 
   await s3.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));

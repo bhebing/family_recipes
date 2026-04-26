@@ -86,6 +86,20 @@ aws cloudformation deploy \
   --stack-name family-recipes-alb \
   --template-file 06-alb.yml
 
+echo "==> Deploying CloudFront + S3 bucket policy..."
+aws cloudformation deploy \
+  --region $REGION \
+  --stack-name family-recipes-cloudfront \
+  --template-file 08-cloudfront.yml
+
+CLOUDFRONT_DOMAIN=$(aws cloudformation list-exports \
+  --region $REGION \
+  --query "Exports[?Name=='family-recipes-cloudfront-domain'].Value" \
+  --output text)
+
+echo "    CloudFront domain: $CLOUDFRONT_DOMAIN"
+echo "    ⚠ Enable 'Block all public access' on the S3 bucket now if not already done."
+
 IMAGE_URI=$(aws cloudformation list-exports \
   --region $REGION \
   --query "Exports[?Name=='family-recipes-ecr-uri'].Value" \

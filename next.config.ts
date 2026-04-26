@@ -12,6 +12,11 @@ const nextConfig: NextConfig = {
         hostname: "*.amazonaws.com",
         pathname: "/recipes/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.cloudfront.net",
+        pathname: "/recipes/**",
+      },
     ],
   },
 };
