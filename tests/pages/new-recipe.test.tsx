@@ -5,7 +5,18 @@ import NewRecipePage from "@/app/[locale]/recipes/new/page";
 const mockRedirect = vi.fn();
 
 vi.mock("next/navigation", () => ({
-  redirect: (url: string) => mockRedirect(url),
+  redirect: (url: string) => {
+    mockRedirect(url);
+    throw new Error("NEXT_REDIRECT");
+  },
+}));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    user: {
+      findUnique: vi.fn(),
+    },
+  },
 }));
 
 vi.mock("@/auth", () => ({
@@ -24,7 +35,9 @@ vi.mock("@/components/RecipeForm", () => ({
 describe("NewRecipePage", () => {
   it("renders the form when authenticated", async () => {
     const { auth } = await import("@/auth");
+    const { prisma } = await import("@/lib/prisma");
     vi.mocked(auth).mockResolvedValueOnce({ user: { id: "u1", name: "Jan", email: "jan@test.nl" } } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ approved: true } as never);
 
     const Page = await NewRecipePage();
     render(Page);
@@ -36,7 +49,7 @@ describe("NewRecipePage", () => {
     const { auth } = await import("@/auth");
     vi.mocked(auth).mockResolvedValueOnce(null as never);
 
-    await NewRecipePage();
+    await expect(NewRecipePage()).rejects.toThrow("NEXT_REDIRECT");
     expect(mockRedirect).toHaveBeenCalledWith("/auth/signin");
   });
 });
