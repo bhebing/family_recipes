@@ -1,6 +1,6 @@
 {
   "Navbar": {
-    "signIn": "Sign in with Google",
+    "signIn": "Sign in",
     "signOut": "Sign out",
     "addRecipe": "Add Recipe"
   },
@@ -58,6 +58,15 @@
   "SignIn": {
     "title": "Welcome back",
     "subtitle": "Sign in to add recipes and leave reviews.",
-    "button": "Sign in with Google"
+    "emailPlaceholder": "your@email.com",
+    "emailSubmit": "Send sign-in link",
+    "sending": "Sending…",
+    "or": "or",
+    "googleButton": "Sign in with Google"
+  },
+  "VerifyEmail": {
+    "title": "Check your email",
+    "body": "We've sent you a sign-in link. Click the link in the email to sign in.",
+    "spam": "Nothing in your inbox? Check your spam folder."
   }
 }

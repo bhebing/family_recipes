@@ -60,7 +60,7 @@ describe("InvitePage", () => {
     expect(screen.getByTestId("accept-btn")).toBeInTheDocument();
   });
 
-  it("shows Google sign-in link when not authenticated", async () => {
+  it("shows sign-in link pointing to sign-in page when not authenticated", async () => {
     const { prisma } = await import("@/lib/prisma");
     const { auth } = await import("@/auth");
     vi.mocked(prisma.invite.findUnique).mockResolvedValueOnce(baseInvite as never);
@@ -68,7 +68,9 @@ describe("InvitePage", () => {
 
     const Page = await InvitePage({ params: Promise.resolve({ token: "tok123" }) });
     render(Page);
-    expect(screen.getByRole("link", { name: "Inloggen met Google" })).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "Inloggen" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/auth/signin?callbackUrl=/invite/tok123");
   });
 
   it("shows inviter name on the page", async () => {

@@ -26,8 +26,8 @@ describe("LanguageSelector", () => {
 
   it("highlights the active locale", () => {
     render(<LanguageSelector />);
-    expect(screen.getByRole("button", { name: "nl" })).toHaveClass("text-stone-800");
-    expect(screen.getByRole("button", { name: "en" })).toHaveClass("text-stone-400");
+    expect(screen.getByRole("button", { name: "nl" })).toHaveClass("text-[#f5ede0]");
+    expect(screen.getByRole("button", { name: "en" })).toHaveClass("text-[#a89070]");
   });
 
   it("navigates to the switched locale on click", async () => {

@@ -87,8 +87,8 @@ describe("createRecipe", () => {
     const { createRecipe } = await import("@/app/actions/recipes");
     await expect(createRecipe(data)).rejects.toThrow("NEXT_REDIRECT");
     const call = vi.mocked(prisma.recipe.create).mock.calls[0][0];
-    expect(call.data.ingredients.create).toHaveLength(1);
-    expect(call.data.steps.create).toHaveLength(1);
+    expect((call.data.ingredients as { create: unknown[] }).create).toHaveLength(1);
+    expect((call.data.steps as { create: unknown[] }).create).toHaveLength(1);
   });
 });
 

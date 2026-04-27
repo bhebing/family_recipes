@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Resend from "next-auth/providers/resend";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 // @ts-ignore -- adapter expects legacy Prisma client interface; works at runtime
 import { prisma } from "@/lib/prisma";
@@ -10,6 +11,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    Resend({
+      apiKey: process.env.RESEND_API_KEY,
+      from: process.env.AUTH_EMAIL_FROM ?? "Family Recipes <noreply@example.com>",
     }),
   ],
   callbacks: {
@@ -56,5 +61,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   pages: {
     signIn: "/auth/signin",
     error: "/auth/error",
+    verifyRequest: "/auth/verify",
   },
 });

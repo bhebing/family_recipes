@@ -12,21 +12,17 @@ vi.mock("next-auth/react", () => ({
 }));
 
 vi.mock("next-intl", () => ({
-  useTranslations: () => (key: string) => ({ signIn: "Sign in with Google", signOut: "Sign out" }[key] ?? key),
+  useTranslations: () => (key: string) => ({ signIn: "Sign in", signOut: "Sign out" }[key] ?? key),
 }));
 
 describe("SignInButton", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("renders the sign-in label", () => {
+  it("renders a link to the sign-in page", () => {
     render(<SignInButton />);
-    expect(screen.getByRole("button", { name: "Sign in with Google" })).toBeInTheDocument();
-  });
-
-  it("calls signIn with google on click", async () => {
-    render(<SignInButton />);
-    await userEvent.click(screen.getByRole("button"));
-    expect(mockSignIn).toHaveBeenCalledWith("google");
+    const link = screen.getByRole("link", { name: "Sign in" });
+    expect(link).toBeInTheDocument();
+    expect(link).toHaveAttribute("href", "/auth/signin");
   });
 });
 

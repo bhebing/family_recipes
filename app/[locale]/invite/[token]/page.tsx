@@ -39,10 +39,10 @@ export default async function InvitePage({ params }: Props) {
           <AcceptInviteButton token={token} />
         ) : (
           <a
-            href={`/api/auth/signin/google?callbackUrl=/invite/${token}`}
+            href={`/auth/signin?callbackUrl=/invite/${token}`}
             className="inline-block rounded-full bg-amber-700 px-6 py-3 text-sm font-medium text-white hover:bg-amber-800 transition-colors"
           >
-            Inloggen met Google
+            Inloggen
           </a>
         )}
       </div>

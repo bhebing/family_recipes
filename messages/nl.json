@@ -1,6 +1,6 @@
 {
   "Navbar": {
-    "signIn": "Inloggen met Google",
+    "signIn": "Inloggen",
     "signOut": "Uitloggen",
     "addRecipe": "Recept toevoegen"
   },
@@ -58,6 +58,15 @@
   "SignIn": {
     "title": "Welkom terug",
     "subtitle": "Log in om recepten toe te voegen en beoordelingen achter te laten.",
-    "button": "Inloggen met Google"
+    "emailPlaceholder": "jouw@email.nl",
+    "emailSubmit": "Stuur inloglink",
+    "sending": "Versturen…",
+    "or": "of",
+    "googleButton": "Inloggen met Google"
+  },
+  "VerifyEmail": {
+    "title": "Controleer je e-mail",
+    "body": "We hebben een inloglink gestuurd. Klik op de link in de e-mail om in te loggen.",
+    "spam": "Staat er niets in je inbox? Controleer dan je spammap."
   }
 }

@@ -22,8 +22,8 @@ export default function LanguageSelector() {
           onClick={() => switchLocale(l)}
           className={`px-2 py-1 rounded uppercase transition-colors ${
             locale === l
-              ? "text-stone-800"
-              : "text-stone-400 hover:text-stone-600"
+              ? "text-[#f5ede0]"
+              : "text-[#a89070] hover:text-[#c8b898]"
           }`}
         >
           {l}

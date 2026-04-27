@@ -46,20 +46,20 @@ export default function CommentsSection({ recipeId, comments, currentUserId }: P
 
   return (
     <section>
-      <h2 className="text-xs font-medium uppercase tracking-widest text-stone-400 mb-6">
+      <h2 className="font-serif text-lg font-bold text-[#2c2416] mb-5">
         {t("comments", { count: comments.length })}
       </h2>
 
       {comments.length > 0 && (
-        <ul className="space-y-5 mb-8">
+        <ul className="space-y-4 mb-8">
           {comments.map((comment) => (
-            <li key={comment.id}>
-              <div className="flex items-baseline justify-between gap-2 mb-1">
+            <li key={comment.id} className="bg-[#fdf8f2] rounded-lg border border-[#e0cdb8] p-4">
+              <div className="flex items-baseline justify-between gap-2 mb-2">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-sm font-medium text-stone-800">
+                  <span className="text-sm font-medium text-[#2c2416]">
                     {comment.author.name ?? "?"}
                   </span>
-                  <span className="text-xs text-stone-400">
+                  <span className="text-xs text-[#a89070]">
                     {new Date(comment.createdAt).toLocaleDateString()}
                   </span>
                 </div>
@@ -67,20 +67,20 @@ export default function CommentsSection({ recipeId, comments, currentUserId }: P
                   <button
                     onClick={() => handleDelete(comment.id)}
                     disabled={isPending}
-                    className="text-xs text-stone-300 hover:text-red-400 transition-colors disabled:opacity-50"
+                    className="text-xs text-[#c8b898] hover:text-red-400 transition-colors disabled:opacity-50"
                   >
                     {t("commentDelete")}
                   </button>
                 )}
               </div>
-              <p className="text-sm text-stone-600 leading-relaxed">{comment.content}</p>
+              <p className="text-sm text-[#5a4a38] leading-relaxed">{comment.content}</p>
             </li>
           ))}
         </ul>
       )}
 
       {comments.length === 0 && (
-        <p className="text-sm text-stone-400 mb-8">{t("noComments")}</p>
+        <p className="text-sm text-[#a89070] mb-8">{t("noComments")}</p>
       )}
 
       {currentUserId ? (
@@ -91,18 +91,18 @@ export default function CommentsSection({ recipeId, comments, currentUserId }: P
             onChange={(e) => setText(e.target.value)}
             rows={3}
             placeholder={t("commentPlaceholder")}
-            className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2.5 text-sm placeholder:text-stone-300 focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600 transition-colors"
+            className="w-full rounded-lg border border-[#e0cdb8] bg-[#fdf8f2] px-3 py-2.5 text-sm text-[#2c2416] placeholder:text-[#c8b898] focus:border-amber-600 focus:outline-none focus:ring-1 focus:ring-amber-600 transition-colors"
           />
           <button
             type="submit"
             disabled={isPending || !text.trim()}
-            className="rounded-full bg-amber-700 px-5 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-50 transition-colors"
+            className="rounded-full bg-[#2c2416] px-5 py-2 text-sm font-medium text-[#f5ede0] hover:bg-[#3d3020] disabled:opacity-50 transition-colors"
           >
             {isPending ? t("commentSubmitting") : t("commentSubmit")}
           </button>
         </form>
       ) : (
-        <p className="text-sm text-stone-400">
+        <p className="text-sm text-[#a89070]">
           <Link href="/auth/signin" className="text-amber-700 hover:text-amber-800 transition-colors">
             {t("commentSignIn")}
           </Link>
