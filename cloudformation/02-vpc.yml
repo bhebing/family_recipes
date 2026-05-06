@@ -22,7 +22,7 @@ Resources:
       VpcId: !Ref VPC
       InternetGatewayId: !Ref InternetGateway
 
-  # ── Public subnets (ALB) ─────────────────────────────────────────────────────
+  # ── Public subnets (EC2) ──────────────────────────────────────────────────────
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -45,7 +45,7 @@ Resources:
         - Key: Name
           Value: family-recipes-public-2
 
-  # ── Private subnets (ECS + RDS) ──────────────────────────────────────────────
+  # ── Private subnets (RDS only — no internet access needed) ───────────────────
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -65,19 +65,6 @@ Resources:
       Tags:
         - Key: Name
           Value: family-recipes-private-2
-
-  # ── NAT Gateway (private subnets route outbound traffic through this) ─────────
-  NATElasticIP:
-    Type: AWS::EC2::EIP
-    DependsOn: IGWAttachment
-    Properties:
-      Domain: vpc
-
-  NATGateway:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NATElasticIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
 
   # ── Route tables ─────────────────────────────────────────────────────────────
   PublicRouteTable:
@@ -105,17 +92,11 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       RouteTableId: !Ref PublicRouteTable
 
+  # Private subnets use the main VPC route table (intra-VPC only, no default route)
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
-
-  PrivateRoute:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NATGateway
 
   PrivateSubnet1RouteAssoc:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -130,10 +111,10 @@ Resources:
       RouteTableId: !Ref PrivateRouteTable
 
   # ── Security groups ───────────────────────────────────────────────────────────
-  ALBSecurityGroup:
+  EC2SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Allow HTTP and HTTPS from internet
+      GroupDescription: Allow HTTP and HTTPS from internet to EC2
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -145,17 +126,6 @@ Resources:
           ToPort: 443
           CidrIp: 0.0.0.0/0
 
-  ECSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow traffic from ALB to ECS
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
-          SourceSecurityGroupId: !Ref ALBSecurityGroup
-
   RDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -165,7 +135,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
-          SourceSecurityGroupId: !Ref ECSSecurityGroup
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
 
 Outputs:
   VpcId:
@@ -188,14 +158,10 @@ Outputs:
     Value: !Ref PrivateSubnet2
     Export:
       Name: family-recipes-private-subnet-2
-  ALBSecurityGroup:
-    Value: !Ref ALBSecurityGroup
+  EC2SecurityGroup:
+    Value: !Ref EC2SecurityGroup
     Export:
-      Name: family-recipes-alb-sg
-  ECSSecurityGroup:
-    Value: !Ref ECSSecurityGroup
-    Export:
-      Name: family-recipes-ecs-sg
+      Name: family-recipes-ec2-sg
   RDSSecurityGroup:
     Value: !Ref RDSSecurityGroup
     Export:

@@ -1,46 +1,43 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: IAM roles for ECS task execution and runtime (family-recipes)
+Description: IAM instance role for EC2 running family-recipes
 
 Resources:
-  # Used by ECS to pull the image from ECR and read secrets
-  TaskExecutionRole:
+  EC2Role:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: family-recipes-ecs-execution-role
+      RoleName: family-recipes-ec2-role
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service: ecs-tasks.amazonaws.com
+              Service: ec2.amazonaws.com
             Action: sts:AssumeRole
+      # Enables SSM Session Manager — no SSH or bastion host needed
       ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
+        - PolicyName: ECRPull
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ecr:GetAuthorizationToken
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ecr:BatchGetImage
+                  - ecr:GetDownloadUrlForLayer
+                Resource: !ImportValue family-recipes-ecr-arn
         - PolicyName: ReadSecrets
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
-                  - secretsmanager:GetSecretValue
+                Action: secretsmanager:GetSecretValue
                 Resource:
                   - !ImportValue family-recipes-db-secret-arn
                   - !ImportValue family-recipes-app-secret-arn
-
-  # Used by the running app — S3 access via task role, no static keys needed
-  TaskRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: family-recipes-ecs-task-role
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: ecs-tasks.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
         - PolicyName: S3RecipeImages
           PolicyDocument:
             Version: "2012-10-17"
@@ -51,12 +48,15 @@ Resources:
                   - s3:DeleteObject
                 Resource: arn:aws:s3:::family-recipes-715991861892-eu-west-2-an/recipes/*
 
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: family-recipes-ec2-profile
+      Roles:
+        - !Ref EC2Role
+
 Outputs:
-  TaskExecutionRoleArn:
-    Value: !GetAtt TaskExecutionRole.Arn
+  InstanceProfileName:
+    Value: !Ref EC2InstanceProfile
     Export:
-      Name: family-recipes-execution-role-arn
-  TaskRoleArn:
-    Value: !GetAtt TaskRole.Arn
-    Export:
-      Name: family-recipes-task-role-arn
+      Name: family-recipes-instance-profile-name

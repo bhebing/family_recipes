@@ -35,8 +35,7 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: Allow
-                Action:
-                  - ecr:GetAuthorizationToken
+                Action: ecr:GetAuthorizationToken
                 Resource: "*"
               - Effect: Allow
                 Action:
@@ -48,17 +47,22 @@ Resources:
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
                 Resource: !ImportValue family-recipes-ecr-arn
+              # Trigger /app/deploy.sh on the EC2 instance via SSM Run Command
               - Effect: Allow
-                Action:
-                  - ecs:UpdateService
-                  - ecs:DescribeServices
-                Resource: "*"
-              - Effect: Allow
-                Action:
-                  - iam:PassRole
+                Action: ssm:SendCommand
                 Resource:
-                  - !ImportValue family-recipes-execution-role-arn
-                  - !ImportValue family-recipes-task-role-arn
+                  - !Sub "arn:aws:ec2:eu-west-2:${AWSAccountId}:instance/*"
+                  - arn:aws:ssm:eu-west-2::document/AWS-RunShellScript
+              # Wait for the command to complete in CI
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource: "*"
+              # Look up the instance ID from the CloudFormation stack output
+              - Effect: Allow
+                Action: cloudformation:DescribeStacks
+                Resource: !Sub "arn:aws:cloudformation:eu-west-2:${AWSAccountId}:stack/family-recipes-ec2/*"
 
 Outputs:
   GitHubActionsRoleArn:

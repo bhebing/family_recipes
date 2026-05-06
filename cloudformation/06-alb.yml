@@ -1,3 +1,7 @@
+# DEPRECATED — replaced by 06-ec2.yml.
+# Before deploying 06-ec2.yml, delete this CloudFormation stack from the AWS console
+# so its exports (family-recipes-alb-dns, family-recipes-target-group-arn,
+# family-recipes-certificate-arn) are freed up.
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ACM certificate, ALB, HTTPS listener, and Route53 for family-recipes
 

@@ -1,3 +1,7 @@
+# DEPRECATED — replaced by 06-ec2.yml (EC2 + Docker + Caddy).
+# Before updating 02-vpc.yml and 05-iam.yml, delete this CloudFormation stack first
+# so its imports (family-recipes-ecs-sg, family-recipes-execution-role-arn,
+# family-recipes-task-role-arn, family-recipes-target-group-arn) are released.
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ECS Fargate cluster and service for family-recipes
 

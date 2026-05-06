@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: EC2 t4g.micro with Docker + Caddy, replacing ALB + ECS for family-recipes
+
+Parameters:
+  ImageUri:
+    Type: String
+    Description: Full ECR image URI including tag (e.g. 123456789.dkr.ecr.eu-west-2.amazonaws.com/family-recipes:abc123)
+
+Resources:
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro
+      # Latest Amazon Linux 2023 x86_64 — resolves at deploy time via SSM
+      ImageId: "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}"
+      SubnetId: !ImportValue family-recipes-public-subnet-1
+      IamInstanceProfile: !ImportValue family-recipes-instance-profile-name
+      SecurityGroupIds:
+        - !ImportValue family-recipes-ec2-sg
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64:
+          Fn::Sub:
+            # CloudFormation substitutes ${ImageUri} (parameter) and ${CloudFrontUrl}
+            # (imported value) before this script reaches the instance.
+            # Plain $VAR references (no braces) are left alone by CloudFormation
+            # and resolved by bash at runtime.
+            - |
+              #!/bin/bash
+              set -euo pipefail
+              IMAGE_URI="${ImageUri}"
+              REGION="eu-west-2"
+              CLOUDFRONT_URL="${CloudFrontUrl}"
+
+              # ── System setup ───────────────────────────────────────────────────
+              dnf install -y docker jq
+              systemctl enable --now docker
+
+              # Docker Compose v2 plugin — ARM64 binary for Graviton (t4g)
+              mkdir -p /usr/local/lib/docker/cli-plugins
+              curl -fsSL \
+                https://github.com/docker/compose/releases/download/v2.27.1/docker-compose-linux-x86_64 \
+                -o /usr/local/lib/docker/cli-plugins/docker-compose
+              chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+              mkdir -p /app
+
+              # ── Caddyfile — auto TLS via Let's Encrypt ────────────────────────
+              cat > /app/Caddyfile << 'CADDYEOF'
+              klaproosnet.nl, www.klaproosnet.nl {
+                reverse_proxy app:3000
+              }
+              CADDYEOF
+
+              # ── Secrets → /app/.env ───────────────────────────────────────────
+              # App secret: AUTH_SECRET, GOOGLE_CLIENT_ID/SECRET, ADMIN_EMAIL,
+              #             S3_BUCKET_NAME, NEXT_PUBLIC_BASE_URL, AUTH_URL (if set)
+              aws secretsmanager get-secret-value --region $REGION \
+                --secret-id family-recipes/app \
+                --query SecretString --output text \
+                | jq -r 'to_entries[] | "\(.key)=\(.value)"' > /app/.env
+
+              # DB secret: host, username, password, dbname (used by migrate-and-start.sh)
+              aws secretsmanager get-secret-value --region $REGION \
+                --secret-id family-recipes/db-credentials \
+                --query SecretString --output text \
+                | jq -r '"DB_HOST=\(.host)\nDB_USERNAME=\(.username)\nDB_PASSWORD=\(.password)\nDB_NAME=\(.dbname)"' \
+                >> /app/.env
+
+              printf '%s\n' \
+                "CLOUDFRONT_URL=$CLOUDFRONT_URL" \
+                "NODE_ENV=production" \
+                "AUTH_TRUST_HOST=true" \
+                "AUTH_URL=https://klaproosnet.nl" \
+                "AWS_REGION=$REGION" >> /app/.env
+
+              # Persist CloudFront URL so the deploy script can read it on future runs
+              echo "$CLOUDFRONT_URL" > /app/cloudfront_url
+
+              # ── ECR login ─────────────────────────────────────────────────────
+              ECR_REGISTRY=$(echo $IMAGE_URI | cut -d/ -f1)
+              aws ecr get-login-password --region $REGION \
+                | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+              # ── docker-compose.yml ────────────────────────────────────────────
+              # COMPOSEEOF is unquoted so bash expands $IMAGE_URI into the file.
+              cat > /app/docker-compose.yml << COMPOSEEOF
+              services:
+                caddy:
+                  image: caddy:2-alpine
+                  restart: unless-stopped
+                  ports:
+                    - "80:80"
+                    - "443:443"
+                  volumes:
+                    - /app/Caddyfile:/etc/caddy/Caddyfile:ro
+                    - caddy_data:/data
+                    - caddy_config:/config
+                  networks:
+                    - web
+                app:
+                  image: $IMAGE_URI
+                  restart: unless-stopped
+                  env_file: /app/.env
+                  networks:
+                    - web
+              volumes:
+                caddy_data:
+                caddy_config:
+              networks:
+                web:
+              COMPOSEEOF
+
+              # ── Deploy script for future image updates ────────────────────────
+              # Usage: /app/deploy.sh <new-image-uri>
+              # Trigger remotely: aws ssm send-command --instance-ids <id> \
+              #   --document-name AWS-RunShellScript \
+              #   --parameters commands=["/app/deploy.sh <image-uri>"]
+              cat > /app/deploy.sh << 'DEPLOYEOF'
+              #!/bin/bash
+              set -euo pipefail
+              IMAGE_URI="$1"
+              REGION="eu-west-2"
+
+              aws secretsmanager get-secret-value --region $REGION \
+                --secret-id family-recipes/app \
+                --query SecretString --output text \
+                | jq -r 'to_entries[] | "\(.key)=\(.value)"' > /app/.env
+
+              aws secretsmanager get-secret-value --region $REGION \
+                --secret-id family-recipes/db-credentials \
+                --query SecretString --output text \
+                | jq -r '"DB_HOST=\(.host)\nDB_USERNAME=\(.username)\nDB_PASSWORD=\(.password)\nDB_NAME=\(.dbname)"' \
+                >> /app/.env
+
+              CLOUDFRONT_URL=$(cat /app/cloudfront_url)
+              printf '%s\n' \
+                "CLOUDFRONT_URL=$CLOUDFRONT_URL" \
+                "NODE_ENV=production" \
+                "AUTH_TRUST_HOST=true" \
+                "AUTH_URL=https://klaproosnet.nl" \
+                "AWS_REGION=$REGION" >> /app/.env
+
+              # Update only the app service image (matches ECR URI, not caddy:*)
+              ECR_REGISTRY=$(echo $IMAGE_URI | cut -d/ -f1)
+              sed -i "s|image: $ECR_REGISTRY/.*|image: $IMAGE_URI|" /app/docker-compose.yml
+
+              aws ecr get-login-password --region $REGION \
+                | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+              docker compose -f /app/docker-compose.yml pull app
+              docker compose -f /app/docker-compose.yml up -d --remove-orphans
+              DEPLOYEOF
+              chmod +x /app/deploy.sh
+
+              # ── Start services ────────────────────────────────────────────────
+              docker compose -f /app/docker-compose.yml pull
+              docker compose -f /app/docker-compose.yml up -d
+            - CloudFrontUrl: !ImportValue family-recipes-cloudfront-url
+
+  EIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref Instance
+      AllocationId: !GetAtt ElasticIP.AllocationId
+
+  DNSRecord:
+    Type: AWS::Route53::RecordSet
+    DependsOn: EIPAssociation
+    Properties:
+      HostedZoneId: Z1T2E0SMMEAWJX
+      Name: klaproosnet.nl
+      Type: A
+      TTL: "300"
+      ResourceRecords:
+        - !Ref ElasticIP
+
+  WWWDNSRecord:
+    Type: AWS::Route53::RecordSet
+    DependsOn: EIPAssociation
+    Properties:
+      HostedZoneId: Z1T2E0SMMEAWJX
+      Name: www.klaproosnet.nl
+      Type: A
+      TTL: "300"
+      ResourceRecords:
+        - !Ref ElasticIP
+
+Outputs:
+  PublicIP:
+    Value: !Ref ElasticIP
+    Export:
+      Name: family-recipes-public-ip
+  InstanceId:
+    Value: !Ref Instance
+    Export:
+      Name: family-recipes-instance-id
